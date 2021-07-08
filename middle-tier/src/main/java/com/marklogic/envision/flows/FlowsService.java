@@ -131,7 +131,8 @@ public class FlowsService {
 			String stepType = stepJson.get("stepDefinitionType").asText();
 			String stepName = stepJson.get("name").asText();
 			String stepId = stepJson.path("stepId").asText(stepName + "-" + stepType.toLowerCase());
-
+			String sourceCollection = stepJson.get("sourceCollection").asText();
+			String sourceQuery = stepJson.get("sourceQuery").asText();
 			if (hubClient.isMultiTenant()) {
 				// update the permissions to be the user's unique role
 				// so that when the flow runs, the output docs are visible only to the current user
@@ -174,6 +175,12 @@ public class FlowsService {
 					ObjectMapper om = new ObjectMapper();
 					JsonNode node = om.readTree(String.format("{\"name\":\"%s\",\"type\":\"custom\" }",stepName));
 					CustomStepDefinitionImpl stepDefinition = (CustomStepDefinitionImpl) stepDefinitionManager.createStepDefinitionFromJSON(node);
+
+					Map stepOptions = stepDefinition.getOptions();
+					stepOptions.put("sourceCollection", sourceCollection);
+					stepOptions.put("sourceQuery", sourceQuery);
+					stepDefinition.setOptions(stepOptions);
+
 					stepDefinition.setModulePath(String.format("/custom-modules/custom/%s/main.sjs", stepName));
 					stepDefinitionManager.saveStepDefinition(stepDefinition);
 					deployService.loadStepDefinition(hubClient, stepDefinition);
